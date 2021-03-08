@@ -1,0 +1,15 @@
+[run]
+source =
+    batch_rendering
+    tests
+branch = True
+omit =
+    batch_rendering/__main__.py
+
+[report]
+exclude_lines =
+    no cov
+    no qa
+    noqa
+    pragma: no cover
+    if __name__ == .__main__.:

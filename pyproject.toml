@@ -1,0 +1,17 @@
+[metadata]
+name = 'batch_rendering'
+version = '0.0.1'
+description = ''
+author = 'Slimane RECHDI'
+author_email = ''
+license = ''
+url = 'https://github.com/_/batch_rendering'
+
+[requires]
+python_version = ['2.7', '3.5', '3.6', 'pypy', 'pypy3']
+
+[build-system]
+requires = ['setuptools', 'wheel']
+
+[tool.hatch.commands]
+prerelease = 'hatch build'
