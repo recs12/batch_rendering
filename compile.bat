@@ -1,0 +1,1 @@
+python -m nuitka --standalone --plugin-enable=numpy cli.py

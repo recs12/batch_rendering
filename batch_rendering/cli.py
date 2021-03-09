@@ -1,6 +1,7 @@
-import pandas as pd
 import subprocess
+
 import click
+import pandas as pd
 
 
 def render_one_item(commands: list, mode: str):
@@ -27,6 +28,7 @@ def render_one_item(commands: list, mode: str):
             commands[5],
             commands[6],
             commands[7],
+            commands[8],
         )
         subprocess.run(
             f"SEToolRender -m {mode} -i {item_id} -f {revision} -u {user} -p {password} -g {group} -r {role} -s {server} -o {folder_target}",
@@ -41,7 +43,6 @@ def render_one_item(commands: list, mode: str):
 def batch_rendering(excel):
     """Run SEToolRendering in batch with an excel file."""
     df = pd.read_excel(
-        # r"C:\Users\recs\Desktop\RenderingTool\template_rendering.xlsx",
         excel,
         index_col=None,
         dtype={
@@ -50,6 +51,7 @@ def batch_rendering(excel):
             "file source (-i)": str,
             "folder target (-o)": str,
             "file target (-q)": str,
+            "revision (-f)": str,
         },
     )
 
