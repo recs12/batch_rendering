@@ -1,5 +1,10 @@
+"""
+Only works in mode TC.
+"""
+
 import subprocess
 import time
+import os, sys
 
 import click
 import pandas as pd
@@ -7,34 +12,17 @@ import datetime
 
 
 def render_one_item(commands: list, mode: str):
-    if mode == "SE":
-        print(f"[INFO] SE - Part Number: {commands[2]}")
-        mode, source, source_file, folder_target, file_target = (
-            commands[0],
-            commands[1],
-            commands[2],
-            commands[3],
-            commands[4],
-        )
-        subprocess.run(
-            f"SEToolRender -m {mode} -f {source} -i {source_file} -o {folder_target} -q {file_target}",
-            shell=True,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    elif mode == "TC":
         print(f"[INFO] TC - Part Number: {commands[1]}")
         mode, item_id, revision, user, password, group, role, server, folder_target = (
+            "TC",
             commands[0],
             commands[1],
-            commands[2],
-            commands[3],
-            commands[4],
-            commands[5],
-            commands[6],
-            commands[7],
-            commands[8],
+            "recs",
+            "recs",
+            "",
+            "",
+            "",
+            "",
         )
         subprocess.run(
             f"SEToolRender -m {mode} -i {item_id} -f {revision} -u {user} -p {password} -g {group} -r {role} -s {server} -o {folder_target}",
@@ -43,11 +31,14 @@ def render_one_item(commands: list, mode: str):
             capture_output=True,
             text=True,
         )
-    else:
-        raise NotImplementedError
+        # check the presence of the files (json, bmp)
+
 
 
 @click.command()
+@click.argument("excel")
+@click.argument("excel")
+@click.argument("excel")
 @click.argument("excel")
 def batch_rendering(excel):
     """Run SEToolRendering in batch with an excel file."""
@@ -57,11 +48,8 @@ def batch_rendering(excel):
         dtype={
             "mode (-m)": str,
             "folder target (-o)": str,
-            "folder source (-f)": str,
-            "file source (-i)": str,
-            "file target (-q)": str,
             "item ID (-i)": str,
-            "revision (-f)": str,
+            "revision (-v)": str,
             "user (-u)": str,
             "password (-p)": str,
             "group (-g)": str,
