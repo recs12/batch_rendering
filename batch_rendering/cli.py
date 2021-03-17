@@ -9,6 +9,8 @@ import os, sys
 import click
 import pandas as pd
 import datetime
+from loguru import logger
+import pathlib
 
 
 def render_one_item(items: list, user, password, group, role, server, folder_target, mode="TC"):
@@ -22,17 +24,25 @@ def render_one_item(items: list, user, password, group, role, server, folder_tar
             text=True,
         )
         # check the presence of the files (json, bmp)
+        bmp = os.path.join(folder_target, f"{item_id}-Rev-{revision}.bmp")
+        json = os.path.join(folder_target, f"{item_id}-Rev-{revision}.json")
+        bmp = pathlib.Path()
+        if (bmp.exists() and json.exists):
+            print ("Files downloaded")
+        else:
+            print ("Files not downloaded")
 
 
-@click.command()
-@click.argument("excel", nargs=1)
-@click.argument("user", nargs=1)
-@click.argument("password", nargs=1)
-@click.argument("group", nargs=1)
-@click.argument("role", nargs=1)
-@click.argument("server", nargs=1)
-@click.argument("folder_target", nargs=1)
-def batch_rendering(excel, user, password,  group, role, server, folder_target):
+# maybe we could add some defaults values.
+@click.command(help= "<excel.xlsx> -u <user> -p <password> -o <target-folder> [<group> <role> <server>]*")
+@click.argument("excel", nargs=1, required=True)
+@click.option("--user", "-u", nargs=1 , required=True)
+@click.option('--password',"-p", prompt=True, confirmation_prompt=True, hide_input=True, required=True)
+@click.option("--folder_target", "-o", nargs=1, required=True)
+@click.option("--group","-g", default="Engineering", nargs=1, required=True)
+@click.option("--role", "-r", default="Designer", nargs=1, required=True)
+@click.option("server", "-s", default="TC_PROD", nargs=1, required=True)
+def batch_rendering(excel, user, password,  folder_target, group, role, server):
     """Run SEToolRendering in batch with an excel file."""
 
     df = pd.read_excel(
@@ -57,7 +67,6 @@ def batch_rendering(excel, user, password,  group, role, server, folder_target):
     except subprocess.CalledProcessError as c:
         with open("log_rendering_errors.txt", "a") as err:
             err.write(f"[FAIL] Excel line: {row+1}")
-            print(f"[FAIL] iteration: [{row+1}/{number_rows}]")
 
     finally:
         toc = time.perf_counter()
