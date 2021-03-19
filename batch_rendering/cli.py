@@ -13,9 +13,7 @@ from loguru import logger
 import pathlib
 
 
-def render_one_item(
-    items, user, password, folder_target, group, role, server, mode="TC"
-):
+def render_one_item(items, user, password, folder_target, group, role, server, mode):
     print(f"[INFO] TC - Part Number: {items[1]}")
     item_id, revision = items[0], items[1]
     subprocess.run(
@@ -33,14 +31,14 @@ def render_one_item(
     if file_bmp.exists() and file_json.exists():
         logger.info(f"[OK  ] : {item_id} Files downloaded")
     else:
-        logger.info(f"[FAIL] : {item_id} Files not downloaded")
+        logger.error(f"[FAIL] : {item_id} Files not downloaded")
 
 
 # maybe we could add some defaults values.
 @click.command(
     help="excel.xlsx -u <user> -p <password> -o <target-folder> <group>* <role>* <server>*"
 )
-@click.argument("excel", nargs=1, required=True, type=click.Path())
+@click.argument("excel", nargs=1, required=True, type=click.Path(exists=True))
 @click.option("--user", "-u", nargs=1, required=True, type=str, help="Your acronym.")
 @click.option(
     "--password",
@@ -56,50 +54,61 @@ def render_one_item(
     "-o",
     nargs=1,
     required=True,
-    help="Location to download the pictures.",
-    type=click.Path(),
+    help="Location where to download the pictures.",
+    type=click.Path(exists=True),
 )
 @click.option(
     "--group",
     "-g",
-    default="Engineering",
+    default="Engineering", show_default=True,
     nargs=1,
     required=False,
-    type=str,
+    type=click.Choice(['Engineering']),
     help="Group optional.",
 )
 @click.option(
     "--role",
     "-r",
-    default="Designer",
+    default="Designer", show_default=True,
     nargs=1,
     required=False,
-    type=str,
+    type=click.Choice(['Designer']),
     help="Role optional.",
 )
 @click.option(
     "--server",
     "-s",
-    default="TC_PROD",
+    default="TC_PROD", show_default=True,
     nargs=1,
     required=False,
-    type=str,
+    type=click.Choice(['TC_PROD']),
     help="Server optional.",
+)
+@click.option(
+    "--mode",
+    "-m",
+    default="TC", show_default=True,
+    nargs=1,
+    required=False,
+    type=click.Choice(['TC']),
+    help="TC is the only mode enabled.",
 )
 def batch_rendering(
     excel,
     user,
     password,
     folder_target,
-    group="Engineering",
-    role="Designer",
-    server="TC_PROD",
+    group,
+    role,
+    server,
+    mode,
 ):
     """Run SEToolRendering in batch with an excel file."""
 
     logger.add(
         "report_rendering.log",
         format="{time:YYYY-MM-DD at HH:mm:ss} | {level} | {message}",
+        level="INFO",
     )
 
     df = pd.read_excel(
@@ -113,8 +122,8 @@ def batch_rendering(
         # For each row run a command line.
         for row in range(number_rows):
             items: list = [df.iat[row, column] for column in range(number_columns)]
-            render_one_item(items, user, password, folder_target, group, role, server)
-            logger.info(f"[OK  ] {row+1}/{number_rows}")
+            render_one_item(items, user, password, folder_target, group, role, server, mode)
+            logger.info(f"[ITERATION] {row+1}/{number_rows}")
 
     except subprocess.CalledProcessError:
         logger.exception({row + 1})
