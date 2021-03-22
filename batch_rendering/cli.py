@@ -17,7 +17,7 @@ def render_one_item(items, user, password, folder_target, group, role, server, m
     print(f"[INFO] TC - Part Number: {items[1]}")
     item_id, revision = items[0], items[1]
     subprocess.run(
-        f"SEToolRender -m {mode} -i {item_id} -v {revision} -u {user} -p {password} -g {group} -r {role} -s {server} -o {folder_target}",
+        f"SEToolRender {mode} -i {item_id} -v {revision} -u {user} -p {password} -g {group} -r {role} -s {server} -o {folder_target}",
         shell=True,
         check=True,
         capture_output=True,
