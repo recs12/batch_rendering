@@ -16,22 +16,26 @@ import pathlib
 def render_one_item(items, user, password, folder_target, group, role, server, mode):
     print(f"[INFO] TC - Part Number: {items[1]}")
     item_id, revision = items[0], items[1]
-    subprocess.run(
+    print(f"item {item_id} / {revision}")
+    p1 = subprocess.run(
         f"SEToolRender {mode} -i {item_id} -v {revision} -u {user} -p {password} -g {group} -r {role} -s {server} -o {folder_target}",
         shell=True,
-        check=True,
-        capture_output=True,
-        text=True,
+        check=False,
+        capture_output=False,
+        text=True, # display the main macro output
+        stderr= subprocess.DEVNULL, # ignore the errors 
     )
+    if p1.returncode != 0:
+        logger.error(f"[ERROR] : {p1.stderr}")
     # check the presence of the files (json, bmp)
     bmp = os.path.join(folder_target, f"{item_id}-Rev-{revision}.bmp")
     json = os.path.join(folder_target, f"{item_id}-Rev-{revision}.json")
     file_bmp = pathlib.Path(bmp)
     file_json = pathlib.Path(json)
     if file_bmp.exists() and file_json.exists():
-        logger.info(f"[OK  ] : {item_id} Files downloaded")
+        logger.info(f"[OK   ] : {item_id} Files downloaded")
     else:
-        logger.error(f"[FAIL] : {item_id} Files not downloaded")
+        logger.error(f"[FAIL ] : {item_id} Files not downloaded")
 
 
 # maybe we could add some defaults values.
@@ -112,7 +116,7 @@ def batch_rendering(
     )
 
     df = pd.read_excel(
-        excel, index_col=None, dtype={"item ID (-i)": str, "revision (-v)": str}
+        excel, index_col=None, dtype={"Jde": str, "Revision": str} #names of columns in excel must be excatly the same.
     )
     # Define the shape of the excel file.
     number_rows, number_columns = df.shape
@@ -127,6 +131,7 @@ def batch_rendering(
 
     except subprocess.CalledProcessError:
         logger.exception({row + 1})
+
 
     finally:
         toc = time.perf_counter()
