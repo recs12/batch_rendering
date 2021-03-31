@@ -35,7 +35,7 @@ def render_one_item(items, user, password, folder_target, group, role, server, m
         f"SEToolRender {mode} -i {item_id} -v {revision} -u {user} -p {password} -g {group} -r {role} -s {server} -o {folder_target}",
         shell=True,
         check=False,
-        capture_output=True,
+        capture_output=False,
         text=True,  # display the main macro output
         stderr=subprocess.DEVNULL,  # ignore the errors
     )
@@ -49,21 +49,28 @@ def render_one_item(items, user, password, folder_target, group, role, server, m
     json = os.path.join(folder_target, f"{item_id}-Rev-{revision}.json")
     file_bmp = pathlib.Path(bmp)
     file_json = pathlib.Path(json)
-    if file_bmp.exists() and file_json.exists():
-        logger.info(f"[OK   ] : {item_id} Files downloaded")
+
+    if file_bmp.exists():
+        logger.info(f"[OK   ] : {item_id} .bmp downloaded")
     else:
-        logger.error(f"[FAIL ] : {item_id} Files not downloaded")
+        logger.error(f"[FAIL ] : {item_id} .bmp not downloaded")
+
+    if file_json.exists():
+        logger.info(f"[OK   ] : {item_id} .json downloaded")
+    else:
+        logger.error(f"[FAIL ] : {item_id} .json not downloaded")
 
     # If server disconnection code 666 then tempo of 15 min.
-    if p1 == 666:
+    if p1.returncode == 666:
         time.sleep(60*15)
 
 
 # maybe we could add some defaults values.
-@click.command(help="Ctrl + C to stop the macro.")
-@click.argument("excel", nargs=1, required=True, type=click.Path(exists=True))
-@click.option("--user", "-u", nargs=1, required=False, type=str, help="Your acronym.")
-@click.password_option()
+@click.command(help="Exemple: batch_rendering -e <excel.xlsx> -o <Path-to-download-output> (Ctrl + C to stop the macro).")
+@click.option("--excel","-e", nargs=1, required=True, help="Path to excel.", type=click.Path(exists=True))
+@click.option("--user", "-u", default=user_name,
+    show_default=True,nargs=1, required=False, type=str, help="User acronym. (Optional if matching the username of your PC.)")
+@click.password_option(help="Prompt.")
 @click.option(
     "--folder_target",
     "-o",
@@ -115,12 +122,14 @@ def render_one_item(items, user, password, folder_target, group, role, server, m
 @click.option(
     "--debug-mode",
     default="ERROR",
+    show_default=True,
     required=False,
     type=click.Choice(["ERROR", "INFO"]),
     help="Debug mode for logging file.",
 )
 def batch_rendering(
     excel,
+    user,
     password,
     folder_target,
     group,
@@ -128,7 +137,6 @@ def batch_rendering(
     server,
     mode,
     debug_mode,
-    user=user_name,
 ):
     """Run SEToolRendering in batch with an excel file."""
 
