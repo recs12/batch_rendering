@@ -12,6 +12,7 @@ import time
 import click
 import pandas as pd
 from loguru import logger
+import psutil
 
 # import notifiers
 
@@ -26,6 +27,10 @@ from loguru import logger
 # notifier.notify(message="The application is running!", **params)
 
 user_name = getpass.getuser()
+
+def se_opened_instance():
+    """Check the number of instance of solidedge."""
+    return [p.name() for p in psutil.process_iter()].count("Edge.exe")
 
 def render_one_item(items, user, password, folder_target, group, role, server, mode):
     print(f"[INFO] TC - Part Number: {items[1]}")
@@ -42,7 +47,7 @@ def render_one_item(items, user, password, folder_target, group, role, server, m
 
     # Logging of the error message.
     if p1.returncode != 0:
-        logger.error(f"[ERROR] : {p1.stderr}")
+        logger.error(f"[ERROR] : {p1.stdout}")
 
     # check the presence of the files (json, bmp)
     bmp = os.path.join(folder_target, f"{item_id}-Rev-{revision}.bmp")
@@ -60,16 +65,38 @@ def render_one_item(items, user, password, folder_target, group, role, server, m
     else:
         logger.error(f"[FAIL ] : {item_id} .json not downloaded")
 
+    #log error id-rev
+    if not file_json.exists() or not file_bmp.exists():
+        # allow copy-past of the problematic parts in the log file.
+        logger.error(f"id;rev>>>{item_id};{revision}")
+
     # If server disconnection code 666 then tempo of 15 min.
     if p1.returncode == 666:
-        time.sleep(60*15)
+        time.sleep(60 * 15)
 
 
 # maybe we could add some defaults values.
-@click.command(help="Exemple: batch_rendering -e <excel.xlsx> -o <Path-to-download-output> (Ctrl + C to stop the macro).")
-@click.option("--excel","-e", nargs=1, required=True, help="Path to excel.", type=click.Path(exists=True))
-@click.option("--user", "-u", default=user_name,
-    show_default=True,nargs=1, required=False, type=str, help="User acronym. (Optional if matching the username of your PC.)")
+@click.command(
+    help="Exemple: batch_rendering -e <excel.xlsx> -o <Path-to-download-output> (Ctrl + C to stop the macro)."
+)
+@click.option(
+    "--excel",
+    "-e",
+    nargs=1,
+    required=True,
+    help="Path to excel.",
+    type=click.Path(exists=True),
+)
+@click.option(
+    "--user",
+    "-u",
+    default=user_name,
+    show_default=True,
+    nargs=1,
+    required=False,
+    type=str,
+    help="User acronym. (Optional if matching the username of your PC.)",
+)
 @click.password_option(help="Prompt.")
 @click.option(
     "--folder_target",
@@ -128,20 +155,23 @@ def render_one_item(items, user, password, folder_target, group, role, server, m
     help="Debug mode for logging file.",
 )
 def batch_rendering(
-    excel,
-    user,
-    password,
-    folder_target,
-    group,
-    role,
-    server,
-    mode,
-    debug_mode,
+    excel, user, password, folder_target, group, role, server, mode, debug_mode
 ):
     """Run SEToolRendering in batch with an excel file."""
+    
+    # Ch
+    if se_opened_instance() == 0:
+        print("No SolidEdge session open.")
+        return
+    elif se_opened_instance() > 1:
+        print("Only one SolidEdge session can be open to run the macro.")
+        return
 
+
+    # Location of the log file.
+    path_log = os.path.join(folder_target, "rendering_error.log")
     logger.add(
-        "rendering_error.log",
+        path_log,
         format="{time:YYYY-MM-DD at HH:mm:ss} | {level} | {message}",
         level=debug_mode,
     )
