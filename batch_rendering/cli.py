@@ -14,6 +14,8 @@ import pandas as pd
 from loguru import logger
 import psutil
 
+from batch_rendering.ranges import *
+
 # import notifiers
 
 # params = {
@@ -154,11 +156,38 @@ def render_one_item(items, user, password, folder_target, group, role, server, m
     type=click.Choice(["ERROR", "INFO"]),
     help="Debug mode for logging file.",
 )
+@click.option(
+    "--single",
+    required=False,
+    type=int,
+    help="Run one single ligne of the excel file.",
+)
+@click.option(
+    "--to-row",
+    required=False,
+    nargs=1,
+    type=int,
+    help="",
+)
+@click.option(
+    "--from-row",
+    required=False,
+    nargs=1,
+    type=int,
+    help="",
+)
+@click.option(
+    "--between-rows",
+    required=False,
+    nargs=2,
+    type=int,
+    help="",
+)
 def batch_rendering(
-    excel, user, password, folder_target, group, role, server, mode, debug_mode
+    excel, user, password, folder_target, group, role, server, mode, debug_mode, single=False, to_row=False, from_row=False, between_rows=False
 ):
     """Run SEToolRendering in batch with an excel file."""
-    
+
     # Ch
     if se_opened_instance() == 0:
         print("No SolidEdge session open.")
@@ -186,11 +215,24 @@ def batch_rendering(
     )
     # Define the shape of the excel file.
     number_rows, number_columns = df.shape
+    r = Range(number_rows)
+
+    # Check the rows selected.
+    if single:
+        rows = r.unique_row(single)
+    elif to_row:
+        rows = r.to_row(to_row)
+    elif from_row:
+        rows = r.from_row(from_row)
+    elif between_rows:
+        rows = r.between_rows(between_rows[0], between_rows[1])
+    else:
+        rows = range(number_rows)
 
     try:
         tic = time.perf_counter()
         # For each row run a command line.
-        for row in range(number_rows):
+        for row in rows:
             items: list = [df.iat[row, column] for column in range(number_columns)]
             render_one_item(
                 items, user, password, folder_target, group, role, server, mode
