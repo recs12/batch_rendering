@@ -236,7 +236,7 @@ def batch_rendering(
         tic = time.perf_counter()
         # For each row run a command line.
         for row in rows:
-            if error_sequence[-100].count > 100 and all(error_sequence[-100])== 1:
+            if ((len(error_sequence) > 100) and ((all(error_sequence[-100])== 1))):
                 items: list = [df.iat[row, column] for column in range(number_columns)]
                 render_one_item(
                     items, user, password, folder_target, group, role, server, mode
@@ -244,8 +244,12 @@ def batch_rendering(
                 logger.info(f"[ITERATION] {row+1}/{number_rows}")
             else:
                 raise Exception("more than 100 failures in row. The batch has been stopped")
+
     except subprocess.CalledProcessError:
         logger.exception({row + 1})
+
+    except Exception as ex:
+        print(ex.args)
 
     finally:
         toc = time.perf_counter()
