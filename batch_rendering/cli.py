@@ -186,8 +186,15 @@ def render_one_item(items, user, password, folder_target, group, role, server, m
     type=int,
     help="",
 )
+@click.option(
+    "--limit-failure",
+    required=False,
+    nargs=1,
+    type=int,
+    help="Set the maximum number of failure iteration than can occure in a row before the macro interupt the process.",
+)
 def batch_rendering(
-    excel, user, password, folder_target, group, role, server, mode, debug_mode, single=False, to_row=False, from_row=False, between_rows=False
+    excel, user, password, folder_target, group, role, server, mode, debug_mode, single=False, to_row=False, from_row=False, between_rows=False, limit_failure=100
 ):
     """Run SEToolRendering in batch with an excel file."""
 
@@ -236,17 +243,17 @@ def batch_rendering(
         tic = time.perf_counter()
         # For each row run a command line.
         for row in rows:
-            if ((len(error_sequence) > 100) and ((all(error_sequence[-100])== 1))):
-                items: list = [df.iat[row, column] for column in range(number_columns)]
-                render_one_item(
-                    items, user, password, folder_target, group, role, server, mode
-                )
-                logger.info(f"[ITERATION] {row+1}/{number_rows}")
-            else:
-                raise Exception("more than 100 failures in row. The batch has been stopped")
+            if (
+                    (len(error_sequence) > limit_failure) and (all(error_sequence[-limit_failure]) == 1)
+                ): raise Exception("more than 100 failures in row. The batch has been stopped")
+            items: list = [df.iat[row, column] for column in range(number_columns)]
+            render_one_item(
+                items, user, password, folder_target, group, role, server, mode
+            )
+            logger.info(f"[ITERATION] {row}/{number_rows}")
 
     except subprocess.CalledProcessError:
-        logger.exception({row + 1})
+        logger.exception(f"on excel line : {row}")
 
     except Exception as ex:
         print(ex.args)
