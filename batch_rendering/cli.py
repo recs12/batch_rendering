@@ -15,6 +15,7 @@ from loguru import logger
 import psutil
 
 from batch_rendering.ranges import *
+error_sequence = []
 
 # import notifiers
 
@@ -50,6 +51,8 @@ def render_one_item(items, user, password, folder_target, group, role, server, m
     # Logging of the error message.
     if p1.returncode != 0:
         logger.error(f"[ERROR] : {p1.stdout}")
+        # Append 1 to error_sequence for each error
+        error_sequence.append(1)
 
     # check the presence of the files (json, bmp)
     bmp = os.path.join(folder_target, f"{item_id}-Rev-{revision}.bmp")
@@ -233,12 +236,14 @@ def batch_rendering(
         tic = time.perf_counter()
         # For each row run a command line.
         for row in rows:
-            items: list = [df.iat[row, column] for column in range(number_columns)]
-            render_one_item(
-                items, user, password, folder_target, group, role, server, mode
-            )
-            logger.info(f"[ITERATION] {row+1}/{number_rows}")
-
+            if error_sequence[-100].count > 100 and all(error_sequence[-100])== 1:
+                items: list = [df.iat[row, column] for column in range(number_columns)]
+                render_one_item(
+                    items, user, password, folder_target, group, role, server, mode
+                )
+                logger.info(f"[ITERATION] {row+1}/{number_rows}")
+            else:
+                raise Exception("more than 100 failures in row. The batch has been stopped")
     except subprocess.CalledProcessError:
         logger.exception({row + 1})
 
