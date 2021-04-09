@@ -15,7 +15,7 @@ from loguru import logger
 import psutil
 
 from batch_rendering.ranges import *
-error_sequence = []
+error_sequence = [0 for i in range(100)]
 
 # import notifiers
 
@@ -191,7 +191,7 @@ def render_one_item(items, user, password, folder_target, group, role, server, m
     required=False,
     nargs=1,
     type=int,
-    help="Set the maximum number of failure iteration than can occure in a row before the macro interupt the process.",
+    help="Set the maximum number of failure iteration tolerated.",
 )
 def batch_rendering(
     excel, user, password, folder_target, group, role, server, mode, debug_mode, single=False, to_row=False, from_row=False, between_rows=False, limit_failure=100
@@ -244,7 +244,7 @@ def batch_rendering(
         # For each row run a command line.
         for row in rows:
             if (
-                    (len(error_sequence) > limit_failure) and (all(error_sequence[-limit_failure]) == 1)
+                    (len(error_sequence) >= limit_failure) and (all(error_sequence[-limit_failure]) == 1)
                 ): raise Exception("more than 100 failures in row. The batch has been stopped")
             items: list = [df.iat[row, column] for column in range(number_columns)]
             render_one_item(
