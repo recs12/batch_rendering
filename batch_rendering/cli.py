@@ -16,17 +16,13 @@ import psutil
 
 from batch_rendering.ranges import *
 
-# import notifiers
+import notifiers
 
-# params = {
-#     "username": "slimane.rechdi@gmail.com",
-#     "password": "abc123", # prompt with click
-#     "to": "dest@gmail.com"
-# }
-
-# Send a single notification
-# notifier = notifiers.get_notifier("gmail")
-# notifier.notify(message="The application is running!", **params)
+params = {
+    "username": "slimane.rechdi@gmail.com",
+    "password": "GGCaN6$eI2021", # prompt with click
+    "to": "slimane.rechdi@gmail.com"
+}
 
 user_name = getpass.getuser()
 
@@ -246,3 +242,6 @@ def batch_rendering(
         toc = time.perf_counter()
         seconds = toc - tic
         logger.info(f"Time to completion: {datetime.timedelta(seconds=seconds)}")
+        # Send a single notification
+        notifier = notifiers.get_notifier("gmail")
+        notifier.notify(message="The macro has finished the process.", **params)
